@@ -23,11 +23,11 @@ func NewResolverContext(ctx context.Context, o *OperationDefinition, d *Executab
 	return rc
 }
 
-func (s ResolverContext) FindRoot(path ...string) (Selection, error) {
+func (s ResolverContext) FindRoot(path ...string) Selection {
 	return s.find(s.Operation.Selections, path...)
 }
 
-func (s ResolverContext) find(set SelectionSet, path ...string) (Selection, error) {
+func (s ResolverContext) find(set SelectionSet, path ...string) Selection {
 	var found Selection
 	for _, sel := range set {
 		switch sel := sel.(type) {
@@ -36,22 +36,11 @@ func (s ResolverContext) find(set SelectionSet, path ...string) (Selection, erro
 				found = sel
 			}
 		case *InlineFragment:
-			foundInFrag, err := s.find(sel.Fragment.Selections, path...)
-			if err != nil {
-				return nil, err
-			}
-			found = foundInFrag
+			found = s.find(sel.Fragment.Selections, path...)
 		case *FragmentSpread:
-			fragSelections, err := s.getSelections(sel)
-			if err != nil {
-				return nil, err
-			}
-			found, err = s.find(fragSelections, path...)
-			if err != nil {
-				return nil, err
-			}
+			found = s.find(s.getSelections(sel), path...)
 		default:
-			return nil, errors.Errorf("unhandled type %T", sel)
+			panic(errors.Errorf("unhandled type %T", sel))
 		}
 		if found != nil {
 			break
@@ -60,28 +49,24 @@ func (s ResolverContext) find(set SelectionSet, path ...string) (Selection, erro
 
 	path = path[1:]
 	if len(path) == 0 || found == nil {
-		return found, nil
+		return found
 	}
-	sel, err := s.getSelections(found)
-	if err != nil {
-		return nil, err
-	}
-	return s.find(sel, path...)
+	return s.find(s.getSelections(found), path...)
 }
 
-func (s ResolverContext) getSelections(sel Selection) (SelectionSet, error) {
+func (s ResolverContext) getSelections(sel Selection) SelectionSet {
 	switch sel := sel.(type) {
 	case *Field:
-		return sel.SelectionSet, nil
+		return sel.SelectionSet
 	case *InlineFragment:
-		return sel.Fragment.Selections, nil
+		return sel.Fragment.Selections
 	case *FragmentSpread:
 		frag, ok := s.fragmentByName[sel.Name.Name]
 		if !ok {
-			return nil, errors.Errorf("failed to find fragment %s in the mapping", sel.Name.Name)
+			return nil
 		}
-		return frag.Fragment.Selections, nil
+		return frag.Fragment.Selections
 	default:
-		return nil, errors.Errorf("unhandled type %T", sel)
+		panic(errors.Errorf("unhandled type %T", sel))
 	}
 }
