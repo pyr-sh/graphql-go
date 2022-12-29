@@ -1,8 +1,6 @@
 package types
 
-import (
-	"github.com/graph-gophers/graphql-go/errors"
-)
+import "github.com/graph-gophers/graphql-go/errors"
 
 // ExecutableDefinition represents a set of operations or fragments that can be executed
 // against a schema.
@@ -24,16 +22,6 @@ type OperationDefinition struct {
 	Directives DirectiveList
 	Loc        errors.Location
 }
-
-// func (op *OperationDefinition) goToSelection(path ...string) (Selection, error) {
-// 	if len(path) == 0 {
-// 		return nil, stderrors.New("at least one path component needs to be passed")
-// 	}
-// 	var firstSel Selection
-// 	for _, sel := range op.Selections {
-// 		if sel.
-// 	}
-// }
 
 func (op *OperationDefinition) GetFieldNames(path string) []string {
 	return []string{}

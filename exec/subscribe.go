@@ -41,7 +41,8 @@ func (r *Request) Subscribe(ctx context.Context, s *resolvable.Schema, op *types
 		if f.field.HasContext {
 			in = append(in, reflect.ValueOf(types.ResolverContext{
 				Context:    ctx,
-				Definition: r.Doc,
+				Operation:  r.Request.Op,
+				Definition: r.Request.Doc,
 			}))
 		}
 		if f.field.ArgsPacker != nil {

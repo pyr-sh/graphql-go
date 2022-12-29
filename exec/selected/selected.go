@@ -16,6 +16,7 @@ import (
 type Request struct {
 	Schema               *types.Schema
 	Doc                  *types.ExecutableDefinition
+	Op                   *types.OperationDefinition
 	Vars                 map[string]interface{}
 	Mu                   sync.Mutex
 	Errs                 []*errors.QueryError
