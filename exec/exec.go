@@ -203,11 +203,7 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 		if f.field.UseMethodResolver() {
 			var in []reflect.Value
 			if f.field.HasContext {
-				in = append(in, reflect.ValueOf(types.ResolverContext{
-					Context:    traceCtx,
-					Operation:  r.Request.Op,
-					Definition: r.Request.Doc,
-				}))
+				in = append(in, reflect.ValueOf(types.NewResolverContext(traceCtx, r.Request.Op, r.Request.Doc)))
 			}
 			if f.field.ArgsPacker != nil {
 				in = append(in, f.field.PackedArgs)

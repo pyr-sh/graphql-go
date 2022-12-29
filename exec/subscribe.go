@@ -39,11 +39,7 @@ func (r *Request) Subscribe(ctx context.Context, s *resolvable.Schema, op *types
 
 		var in []reflect.Value
 		if f.field.HasContext {
-			in = append(in, reflect.ValueOf(types.ResolverContext{
-				Context:    ctx,
-				Operation:  r.Request.Op,
-				Definition: r.Request.Doc,
-			}))
+			in = append(in, reflect.ValueOf(types.NewResolverContext(ctx, r.Request.Op, r.Request.Doc)))
 		}
 		if f.field.ArgsPacker != nil {
 			in = append(in, f.field.PackedArgs)
