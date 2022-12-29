@@ -23,10 +23,6 @@ type OperationDefinition struct {
 	Loc        errors.Location
 }
 
-func (op *OperationDefinition) GetFieldNames(path string) []string {
-	return []string{}
-}
-
 type OperationType string
 
 // A Selection is a field requested in a GraphQL operation.
