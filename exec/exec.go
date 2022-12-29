@@ -245,14 +245,7 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 	r.execSelectionSet(traceCtx, f.sels, f.field.Type, path, s, result, f.out)
 }
 
-func (r *Request) execSelectionSet(
-	ctx context.Context,
-	sels []selected.Selection,
-	typ types.Type,
-	path *pathSegment,
-	s *resolvable.Schema,
-	resolver reflect.Value,
-	out *bytes.Buffer,
+func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selection, typ types.Type, path *pathSegment, s *resolvable.Schema, resolver reflect.Value, out *bytes.Buffer,
 ) {
 	t, nonNull := unwrapNonNull(typ)
 
@@ -323,14 +316,7 @@ func (r *Request) execSelectionSet(
 	}
 }
 
-func (r *Request) execList(
-	ctx context.Context,
-	sels []selected.Selection,
-	typ *types.List,
-	path *pathSegment,
-	s *resolvable.Schema,
-	resolver reflect.Value,
-	out *bytes.Buffer,
+func (r *Request) execList(ctx context.Context, sels []selected.Selection, typ *types.List, path *pathSegment, s *resolvable.Schema, resolver reflect.Value, out *bytes.Buffer,
 ) {
 	l := resolver.Len()
 	entryouts := make([]bytes.Buffer, l)
