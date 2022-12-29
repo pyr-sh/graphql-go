@@ -250,6 +250,7 @@ func (s *Schema) exec(ctx context.Context, queryString string, operationName str
 	r := &exec.Request{
 		Request: selected.Request{
 			Doc:                  doc,
+			Op:                   op,
 			Vars:                 variables,
 			Schema:               s.schema,
 			DisableIntrospection: s.disableIntrospection,
