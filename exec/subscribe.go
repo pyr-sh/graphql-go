@@ -39,7 +39,10 @@ func (r *Request) Subscribe(ctx context.Context, s *resolvable.Schema, op *types
 
 		var in []reflect.Value
 		if f.field.HasContext {
-			in = append(in, reflect.ValueOf(ctx))
+			in = append(in, reflect.ValueOf(types.ResolverContext{
+				Context:   ctx,
+				Operation: op,
+			}))
 		}
 		if f.field.ArgsPacker != nil {
 			in = append(in, f.field.PackedArgs)
@@ -138,7 +141,7 @@ func (r *Request) Subscribe(ctx context.Context, s *resolvable.Schema, op *types
 						defer subR.handlePanic(subCtx)
 
 						var buf bytes.Buffer
-						subR.execSelectionSet(subCtx, f.sels, f.field.Type, &pathSegment{nil, f.field.Alias}, s, resp, &buf)
+						subR.execSelectionSet(subCtx, f.sels, f.field.Type, &pathSegment{nil, f.field.Alias}, s, resp, &buf, op)
 
 						propagateChildError := false
 						if _, nonNullChild := f.field.Type.(*types.NonNull); nonNullChild && resolvedToNull(&buf) {

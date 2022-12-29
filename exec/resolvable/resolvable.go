@@ -306,6 +306,7 @@ func (b *execBuilder) makeObjectExec(typeName string, fields types.FieldsDefinit
 }
 
 var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
+var gqlContextType = reflect.TypeOf((*types.ResolverContext)(nil)).Elem()
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (b *execBuilder) makeFieldExec(typeName string, f *types.FieldDefinition, m reflect.Method, sf reflect.StructField,
@@ -325,7 +326,7 @@ func (b *execBuilder) makeFieldExec(typeName string, f *types.FieldDefinition, m
 			in = in[1:] // first parameter is receiver
 		}
 
-		hasContext = len(in) > 0 && in[0] == contextType
+		hasContext = len(in) > 0 && (in[0] == contextType || in[0] == gqlContextType)
 		if hasContext {
 			in = in[1:]
 		}

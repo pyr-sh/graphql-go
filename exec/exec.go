@@ -43,7 +43,7 @@ func (r *Request) Execute(ctx context.Context, s *resolvable.Schema, op *types.O
 	func() {
 		defer r.handlePanic(ctx)
 		sels := selected.ApplyOperation(&r.Request, s, op)
-		r.execSelections(ctx, sels, nil, s, s.Resolver, &out, op.Type == query.Mutation)
+		r.execSelections(ctx, sels, nil, s, s.Resolver, &out, op)
 	}()
 
 	if err := ctx.Err(); err != nil {
@@ -64,7 +64,8 @@ func resolvedToNull(b *bytes.Buffer) bool {
 	return bytes.Equal(b.Bytes(), []byte("null"))
 }
 
-func (r *Request) execSelections(ctx context.Context, sels []selected.Selection, path *pathSegment, s *resolvable.Schema, resolver reflect.Value, out *bytes.Buffer, serially bool) {
+func (r *Request) execSelections(ctx context.Context, sels []selected.Selection, path *pathSegment, s *resolvable.Schema, resolver reflect.Value, out *bytes.Buffer, op *types.OperationDefinition) {
+	serially := op.Type == query.Mutation
 	async := !serially && selected.HasAsyncSel(sels)
 
 	var fields []*fieldToExec
@@ -78,14 +79,14 @@ func (r *Request) execSelections(ctx context.Context, sels []selected.Selection,
 				defer wg.Done()
 				defer r.handlePanic(ctx)
 				f.out = new(bytes.Buffer)
-				execFieldSelection(ctx, r, s, f, &pathSegment{path, f.field.Alias}, true)
+				execFieldSelection(ctx, r, s, f, &pathSegment{path, f.field.Alias}, op, true)
 			}(f)
 		}
 		wg.Wait()
 	} else {
 		for _, f := range fields {
 			f.out = new(bytes.Buffer)
-			execFieldSelection(ctx, r, s, f, &pathSegment{path, f.field.Alias}, true)
+			execFieldSelection(ctx, r, s, f, &pathSegment{path, f.field.Alias}, op, true)
 		}
 	}
 
@@ -168,7 +169,7 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 	return ""
 }
 
-func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f *fieldToExec, path *pathSegment, applyLimiter bool) {
+func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f *fieldToExec, path *pathSegment, op *types.OperationDefinition, applyLimiter bool) {
 	if applyLimiter {
 		r.Limiter <- struct{}{}
 	}
@@ -203,7 +204,10 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 		if f.field.UseMethodResolver() {
 			var in []reflect.Value
 			if f.field.HasContext {
-				in = append(in, reflect.ValueOf(traceCtx))
+				in = append(in, reflect.ValueOf(types.ResolverContext{
+					Context:   traceCtx,
+					Operation: op,
+				}))
 			}
 			if f.field.ArgsPacker != nil {
 				in = append(in, f.field.PackedArgs)
@@ -242,10 +246,18 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 		return
 	}
 
-	r.execSelectionSet(traceCtx, f.sels, f.field.Type, path, s, result, f.out)
+	r.execSelectionSet(traceCtx, f.sels, f.field.Type, path, s, result, f.out, op)
 }
 
-func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selection, typ types.Type, path *pathSegment, s *resolvable.Schema, resolver reflect.Value, out *bytes.Buffer) {
+func (r *Request) execSelectionSet(
+	ctx context.Context,
+	sels []selected.Selection,
+	typ types.Type,
+	path *pathSegment,
+	s *resolvable.Schema,
+	resolver reflect.Value, out *bytes.Buffer,
+	op *types.OperationDefinition,
+) {
 	t, nonNull := unwrapNonNull(typ)
 
 	// a reflect.Value of a nil interface will show up as an Invalid value
@@ -264,7 +276,7 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 
 	switch t.(type) {
 	case *types.ObjectTypeDefinition, *types.InterfaceTypeDefinition, *types.Union:
-		r.execSelections(ctx, sels, path, s, resolver, out, false)
+		r.execSelections(ctx, sels, path, s, resolver, out, op)
 		return
 	}
 
@@ -276,7 +288,7 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 
 	switch t := t.(type) {
 	case *types.List:
-		r.execList(ctx, sels, t, path, s, resolver, out)
+		r.execList(ctx, sels, t, path, s, resolver, out, op)
 
 	case *types.ScalarTypeDefinition:
 		v := resolver.Interface()
@@ -315,7 +327,16 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 	}
 }
 
-func (r *Request) execList(ctx context.Context, sels []selected.Selection, typ *types.List, path *pathSegment, s *resolvable.Schema, resolver reflect.Value, out *bytes.Buffer) {
+func (r *Request) execList(
+	ctx context.Context,
+	sels []selected.Selection,
+	typ *types.List,
+	path *pathSegment,
+	s *resolvable.Schema,
+	resolver reflect.Value,
+	out *bytes.Buffer,
+	op *types.OperationDefinition,
+) {
 	l := resolver.Len()
 	entryouts := make([]bytes.Buffer, l)
 
@@ -329,7 +350,7 @@ func (r *Request) execList(ctx context.Context, sels []selected.Selection, typ *
 			go func(i int) {
 				defer func() { <-sem }()
 				defer r.handlePanic(ctx)
-				r.execSelectionSet(ctx, sels, typ.OfType, &pathSegment{path, i}, s, resolver.Index(i), &entryouts[i])
+				r.execSelectionSet(ctx, sels, typ.OfType, &pathSegment{path, i}, s, resolver.Index(i), &entryouts[i], op)
 			}(i)
 		}
 		for i := 0; i < concurrency; i++ {
@@ -337,7 +358,7 @@ func (r *Request) execList(ctx context.Context, sels []selected.Selection, typ *
 		}
 	} else {
 		for i := 0; i < l; i++ {
-			r.execSelectionSet(ctx, sels, typ.OfType, &pathSegment{path, i}, s, resolver.Index(i), &entryouts[i])
+			r.execSelectionSet(ctx, sels, typ.OfType, &pathSegment{path, i}, s, resolver.Index(i), &entryouts[i], op)
 		}
 	}
 
