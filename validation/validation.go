@@ -8,9 +8,9 @@ import (
 	"strings"
 	"text/scanner"
 
+	"github.com/graph-gophers/graphql-go/common"
 	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/internal/common"
-	"github.com/graph-gophers/graphql-go/internal/query"
+	"github.com/graph-gophers/graphql-go/query"
 	"github.com/graph-gophers/graphql-go/types"
 )
 

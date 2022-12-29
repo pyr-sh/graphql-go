@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/internal/schema"
+	"github.com/graph-gophers/graphql-go/schema"
 	"github.com/graph-gophers/graphql-go/types"
 )
 

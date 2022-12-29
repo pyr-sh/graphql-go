@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/graph-gophers/graphql-go/internal/exec/resolvable"
+	"github.com/graph-gophers/graphql-go/exec/resolvable"
 	"github.com/graph-gophers/graphql-go/introspection"
 )
 
