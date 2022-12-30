@@ -25,6 +25,9 @@ func NewResolverContext(ctx context.Context, o *OperationDefinition, d *Executab
 
 func (rc ResolverContext) GetFieldNames(path ...string) (res []string) {
 	found := rc.findField(rc.op.Selections, path...)
+	if found == nil {
+		return
+	}
 	for _, sel := range found.SelectionSet {
 		res = append(res, rc.fieldNames(sel)...)
 	}
