@@ -50,6 +50,7 @@ func (s *Schema) subscribe(ctx context.Context, queryString string, operationNam
 	r := &exec.Request{
 		Request: selected.Request{
 			Doc:    doc,
+			Op:     op,
 			Vars:   variables,
 			Schema: s.schema,
 		},

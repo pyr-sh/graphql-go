@@ -116,6 +116,7 @@ func (r *Request) Subscribe(ctx context.Context, s *resolvable.Schema, op *types
 				subR := &Request{
 					Request: selected.Request{
 						Doc:    r.Request.Doc,
+						Op:     r.Request.Op,
 						Vars:   r.Request.Vars,
 						Schema: r.Request.Schema,
 					},
