@@ -8,6 +8,6 @@ import (
 )
 
 // SelectedFields retrieves the selected fields passed via the context during the request execution
-func SelectedFields(ctx context.Context) []*types.SelectedField {
+func SelectedFields(ctx context.Context) types.SelectedFields {
 	return exec.SelectedFieldsFromContext(ctx)
 }
