@@ -42,8 +42,8 @@ func (l FieldsDefinition) Names() []string {
 type SelectedField struct {
 	Name       string
 	Alias      string
-	Fields     SelectedFieldList
 	Directives DirectiveList
+	Fields     SelectedFieldList
 }
 
 type SelectedFieldList []*SelectedField
