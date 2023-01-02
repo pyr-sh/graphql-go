@@ -12,9 +12,9 @@ import (
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/exec/resolvable"
 	"github.com/graph-gophers/graphql-go/exec/selected"
+	"github.com/graph-gophers/graphql-go/fields"
 	"github.com/graph-gophers/graphql-go/log"
 	"github.com/graph-gophers/graphql-go/query"
-	"github.com/graph-gophers/graphql-go/selection"
 	"github.com/graph-gophers/graphql-go/trace/tracer"
 	"github.com/graph-gophers/graphql-go/types"
 )
@@ -175,12 +175,12 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 	return ""
 }
 
-func selectionToSelectedFields(internalSelection []selected.Selection) []*selection.SelectedField {
-	fieldSelection := []*selection.SelectedField{}
+func selectionToSelectedFields(internalSelection []selected.Selection) []*fields.SelectedField {
+	fieldSelection := []*fields.SelectedField{}
 	for _, element := range internalSelection {
 		if field, ok := element.(*selected.SchemaField); ok {
 			nestedSelections := selectionToSelectedFields(field.Sels)
-			fieldSelection = append(fieldSelection, &selection.SelectedField{
+			fieldSelection = append(fieldSelection, &fields.SelectedField{
 				Name:           field.Name,
 				SelectedFields: nestedSelections,
 			})
@@ -190,8 +190,8 @@ func selectionToSelectedFields(internalSelection []selected.Selection) []*select
 }
 
 // SelectedFieldsFromContext exposes the fields selected in the GraphQL request
-// using the public-facing selection.SelectedField struct
-func SelectedFieldsFromContext(ctx context.Context) []*selection.SelectedField {
+// using the public-facing fields.SelectedField struct
+func SelectedFieldsFromContext(ctx context.Context) []*fields.SelectedField {
 	selection := ctx.Value(selectedFieldsKey).([]selected.Selection)
 	selectedFields := selectionToSelectedFields(selection)
 	return selectedFields
