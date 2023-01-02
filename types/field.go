@@ -41,8 +41,8 @@ func (l FieldsDefinition) Names() []string {
 // SelectedField is the public representation of a field selection during a graphql query
 type SelectedField struct {
 	Name           string
+	Alias          string
 	SelectedFields []*SelectedField
-	Args           map[string]interface{}
 	Directives     DirectiveList
 }
 
