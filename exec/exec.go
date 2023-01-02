@@ -22,6 +22,7 @@ type ctxKey string
 
 const (
 	selectedFieldKey ctxKey = "selectedField"
+	rootFieldKey     ctxKey = "rootField"
 )
 
 type Request struct {
@@ -174,14 +175,22 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 	return ""
 }
 
-// SelectedFieldFromContext exposes the fields selected in the GraphQL request
-// using the public-facing types.SelectedField struct
+// SelectedFieldFromContext exposes the fields selected in the GraphQL request using the public-facing types.
+// SelectedField struct
 func SelectedFieldFromContext(ctx context.Context) *types.SelectedField {
 	return ctx.Value(selectedFieldKey).(*fieldToExec).field.ToSelectedField()
 }
 
+func RootFieldFromContext(ctx context.Context) *types.SelectedField {
+	return ctx.Value(rootFieldKey).(*fieldToExec).field.ToSelectedField()
+}
+
 func contextWithFieldToExec(parentContext context.Context, f *fieldToExec) context.Context {
 	return context.WithValue(parentContext, selectedFieldKey, f)
+}
+
+func contextWithRootFieldToExec(parentContext context.Context, f *fieldToExec) context.Context {
+	return context.WithValue(parentContext, rootFieldKey, f)
 }
 
 func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f *fieldToExec, path *pathSegment, applyLimiter bool) {
@@ -219,7 +228,11 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 		if f.field.UseMethodResolver() {
 			var in []reflect.Value
 			if f.field.HasContext {
-				in = append(in, reflect.ValueOf(contextWithFieldToExec(traceCtx, f)))
+				traceCtx = contextWithFieldToExec(traceCtx, f)
+				if path == nil {
+					traceCtx = contextWithRootFieldToExec(traceCtx, f)
+				}
+				in = append(in, reflect.ValueOf(traceCtx))
 			}
 			if f.field.ArgsPacker != nil {
 				in = append(in, f.field.PackedArgs)
