@@ -43,6 +43,7 @@ type SelectedField struct {
 	Name       string
 	Alias      string
 	Directives DirectiveList
+	Args       map[string]interface{}
 	Fields     SelectedFieldList
 }
 

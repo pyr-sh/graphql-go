@@ -63,6 +63,7 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 		Name:   sf.Name,
 		Alias:  sf.Alias,
 		Fields: selsToSelectedFields(sf.Sels),
+		Args:   sf.Args,
 	}
 }
 
@@ -72,11 +73,7 @@ func selsToSelectedFields(sels []Selection) (fs []*types.SelectedField) {
 		if !ok {
 			continue
 		}
-		fs = append(fs, &types.SelectedField{
-			Name:   v.Name,
-			Alias:  v.Alias,
-			Fields: selsToSelectedFields(v.Sels),
-		})
+		fs = append(fs, v.ToSelectedField())
 	}
 	return
 }
