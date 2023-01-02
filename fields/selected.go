@@ -7,8 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/types"
 )
 
-// SelectedFieldsFromContext retrieves the selected fields passed via the context during the request
-// execution
+// SelectedFields retrieves the selected fields passed via the context during the request execution
 func SelectedFields(ctx context.Context) []*types.SelectedField {
 	return exec.SelectedFieldsFromContext(ctx)
 }
