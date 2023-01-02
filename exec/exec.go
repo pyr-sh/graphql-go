@@ -237,6 +237,9 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 			var in []reflect.Value
 			if f.field.HasContext {
 				in = append(in, reflect.ValueOf(traceCtx))
+				if len(f.sels) != 0 {
+					traceCtx = contextWithSelectedFields(traceCtx, f.sels)
+				}
 			}
 			if f.field.ArgsPacker != nil {
 				in = append(in, f.field.PackedArgs)
