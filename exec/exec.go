@@ -184,6 +184,8 @@ func selectionToSelectedFields(internalSelection []selected.Selection) []*types.
 		fieldSelection = append(fieldSelection, &types.SelectedField{
 			Name:           field.Name,
 			SelectedFields: selectionToSelectedFields(field.Sels),
+			Args:           field.Args,
+			Directives:     field.Directives,
 		})
 	}
 	return fieldSelection

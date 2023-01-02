@@ -42,4 +42,15 @@ func (l FieldsDefinition) Names() []string {
 type SelectedField struct {
 	Name           string
 	SelectedFields []*SelectedField
+	Args           map[string]interface{}
+	Directives     DirectiveList
+}
+
+type SelectedFields []*SelectedField
+
+func (sf SelectedFields) Names() (res []string) {
+	for _, f := range sf {
+		res = append(res, f.Name)
+	}
+	return
 }
