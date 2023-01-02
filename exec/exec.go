@@ -229,7 +229,7 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 			var in []reflect.Value
 			if f.field.HasContext {
 				traceCtx = contextWithFieldToExec(traceCtx, f)
-				if path == nil {
+				if path.parent == nil { // nil parent indicates it's the root field
 					traceCtx = contextWithRootFieldToExec(traceCtx, f)
 				}
 				in = append(in, reflect.ValueOf(traceCtx))
