@@ -177,13 +177,14 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 func selectionToSelectedFields(internalSelection []selected.Selection) []*types.SelectedField {
 	fieldSelection := []*types.SelectedField{}
 	for _, element := range internalSelection {
-		if field, ok := element.(*selected.SchemaField); ok {
-			nestedSelections := selectionToSelectedFields(field.Sels)
-			fieldSelection = append(fieldSelection, &types.SelectedField{
-				Name:           field.Name,
-				SelectedFields: nestedSelections,
-			})
+		field, ok := element.(*selected.SchemaField)
+		if !ok {
+			continue
 		}
+		fieldSelection = append(fieldSelection, &types.SelectedField{
+			Name:           field.Name,
+			SelectedFields: selectionToSelectedFields(field.Sels),
+		})
 	}
 	return fieldSelection
 }
