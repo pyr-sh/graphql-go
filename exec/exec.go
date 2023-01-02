@@ -180,7 +180,7 @@ func SelectedFieldFromContext(ctx context.Context) *types.SelectedField {
 	return ctx.Value(selectedFieldKey).(*fieldToExec).field.ToSelectedField()
 }
 
-func contextWithSelectedField(parentContext context.Context, f *fieldToExec) context.Context {
+func contextWithFieldToExec(parentContext context.Context, f *fieldToExec) context.Context {
 	return context.WithValue(parentContext, selectedFieldKey, f)
 }
 
@@ -219,10 +219,7 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 		if f.field.UseMethodResolver() {
 			var in []reflect.Value
 			if f.field.HasContext {
-				if len(f.sels) != 0 {
-					traceCtx = contextWithSelectedField(traceCtx, f)
-				}
-				in = append(in, reflect.ValueOf(traceCtx))
+				in = append(in, reflect.ValueOf(contextWithFieldToExec(traceCtx, f)))
 			}
 			if f.field.ArgsPacker != nil {
 				in = append(in, f.field.PackedArgs)
