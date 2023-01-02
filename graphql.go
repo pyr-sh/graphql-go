@@ -15,7 +15,6 @@ import (
 	"github.com/graph-gophers/graphql-go/log"
 	"github.com/graph-gophers/graphql-go/query"
 	"github.com/graph-gophers/graphql-go/schema"
-	"github.com/graph-gophers/graphql-go/selection"
 	"github.com/graph-gophers/graphql-go/trace/noop"
 	"github.com/graph-gophers/graphql-go/trace/tracer"
 	"github.com/graph-gophers/graphql-go/types"
@@ -182,12 +181,6 @@ type Response struct {
 // Validate validates the given query with the schema.
 func (s *Schema) Validate(queryString string) []*errors.QueryError {
 	return s.ValidateWithVariables(queryString, nil)
-}
-
-// SelectedFieldsFromContext retrieves the selected fields passed via the context during the request
-// execution
-func SelectedFieldsFromContext(ctx context.Context) []*selection.SelectedField {
-	return exec.SelectedFieldsFromContext(ctx)
 }
 
 // ValidateWithVariables validates the given query with the schema and the input variables.
