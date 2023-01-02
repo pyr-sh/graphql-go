@@ -191,9 +191,7 @@ func selectionToSelectedFields(internalSelection []selected.Selection) []*types.
 // SelectedFieldsFromContext exposes the fields selected in the GraphQL request
 // using the public-facing types.SelectedField struct
 func SelectedFieldsFromContext(ctx context.Context) []*types.SelectedField {
-	selection := ctx.Value(selectedFieldsKey).([]selected.Selection)
-	selectedFields := selectionToSelectedFields(selection)
-	return selectedFields
+	return selectionToSelectedFields(ctx.Value(selectedFieldsKey).([]selected.Selection))
 }
 
 func contextWithSelectedFields(parentContext context.Context, selection []selected.Selection) context.Context {
