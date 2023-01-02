@@ -21,7 +21,7 @@ import (
 type ctxKey string
 
 const (
-	selectedFieldsKey ctxKey = "selectedFields"
+	selectedFieldKey ctxKey = "selectedField"
 )
 
 type Request struct {
@@ -174,31 +174,14 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 	return ""
 }
 
-func selectionToSelectedFields(internalSelection []selected.Selection) []*types.SelectedField {
-	fieldSelection := []*types.SelectedField{}
-	for _, element := range internalSelection {
-		field, ok := element.(*selected.SchemaField)
-		if !ok {
-			continue
-		}
-		fieldSelection = append(fieldSelection, &types.SelectedField{
-			Name:           field.Name,
-			Alias:          field.Alias,
-			SelectedFields: selectionToSelectedFields(field.Sels),
-			Directives:     field.Directives,
-		})
-	}
-	return fieldSelection
-}
-
-// SelectedFieldsFromContext exposes the fields selected in the GraphQL request
+// SelectedFieldFromContext exposes the fields selected in the GraphQL request
 // using the public-facing types.SelectedField struct
-func SelectedFieldsFromContext(ctx context.Context) types.SelectedFields {
-	return selectionToSelectedFields(ctx.Value(selectedFieldsKey).([]selected.Selection))
+func SelectedFieldFromContext(ctx context.Context) *types.SelectedField {
+	return ctx.Value(selectedFieldKey).(*fieldToExec).field.ToSelectedField()
 }
 
-func contextWithSelectedFields(parentContext context.Context, selection []selected.Selection) context.Context {
-	return context.WithValue(parentContext, selectedFieldsKey, selection)
+func contextWithSelectedField(parentContext context.Context, f *fieldToExec) context.Context {
+	return context.WithValue(parentContext, selectedFieldKey, f)
 }
 
 func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f *fieldToExec, path *pathSegment, applyLimiter bool) {
@@ -237,7 +220,7 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 			var in []reflect.Value
 			if f.field.HasContext {
 				if len(f.sels) != 0 {
-					traceCtx = contextWithSelectedFields(traceCtx, f.sels)
+					traceCtx = contextWithSelectedField(traceCtx, f)
 				}
 				in = append(in, reflect.ValueOf(traceCtx))
 			}

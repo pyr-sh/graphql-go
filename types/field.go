@@ -42,13 +42,13 @@ func (l FieldsDefinition) Names() []string {
 type SelectedField struct {
 	Name           string
 	Alias          string
-	SelectedFields []*SelectedField
+	SelectedFields SelectedFieldList
 	Directives     DirectiveList
 }
 
-type SelectedFields []*SelectedField
+type SelectedFieldList []*SelectedField
 
-func (sf SelectedFields) Names() (res []string) {
+func (sf SelectedFieldList) Names() (res []string) {
 	for _, f := range sf {
 		res = append(res, f.Name)
 	}

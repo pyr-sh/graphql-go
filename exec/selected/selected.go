@@ -55,6 +55,32 @@ type SchemaField struct {
 	FixedResult reflect.Value
 }
 
+func (sf *SchemaField) ToSelectedField() *types.SelectedField {
+	if sf == nil {
+		return nil
+	}
+	return &types.SelectedField{
+		Name:           sf.Name,
+		Alias:          sf.Alias,
+		SelectedFields: selsToSelectedFields(sf.Sels),
+	}
+}
+
+func selsToSelectedFields(sels []Selection) (fs []*types.SelectedField) {
+	for _, f := range sels {
+		v, ok := f.(*SchemaField)
+		if !ok {
+			continue
+		}
+		fs = append(fs, &types.SelectedField{
+			Name:           v.Name,
+			Alias:          v.Alias,
+			SelectedFields: selsToSelectedFields(v.Sels),
+		})
+	}
+	return
+}
+
 type TypeAssertion struct {
 	resolvable.TypeAssertion
 	Sels []Selection
