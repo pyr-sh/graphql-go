@@ -60,10 +60,11 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 		return nil
 	}
 	return &types.SelectedField{
-		Name:   sf.Name,
-		Alias:  sf.Alias,
-		Fields: selsToSelectedFields(sf.Sels),
-		Args:   sf.Args,
+		Name:       sf.Name,
+		Alias:      sf.Alias,
+		Fields:     selsToSelectedFields(sf.Sels),
+		Args:       sf.Args,
+		Directives: sf.Directives,
 	}
 }
 
