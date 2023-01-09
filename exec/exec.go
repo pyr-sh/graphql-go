@@ -185,11 +185,11 @@ func RootFieldFromContext(ctx context.Context) *types.SelectedField {
 	return ctx.Value(rootFieldKey).(*fieldToExec).field.ToSelectedField()
 }
 
-func contextWithFieldToExec(parentContext context.Context, f *fieldToExec) context.Context {
+func contextWithExecutableFieldSelection(parentContext context.Context, f *fieldToExec) context.Context {
 	return context.WithValue(parentContext, selectedFieldKey, f)
 }
 
-func contextWithRootFieldToExec(parentContext context.Context, f *fieldToExec) context.Context {
+func contextWithExecutableRootFieldSelection(parentContext context.Context, f *fieldToExec) context.Context {
 	return context.WithValue(parentContext, rootFieldKey, f)
 }
 
@@ -228,9 +228,9 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 		if f.field.UseMethodResolver() {
 			var in []reflect.Value
 			if f.field.HasContext {
-				traceCtx = contextWithFieldToExec(traceCtx, f)
+				traceCtx = contextWithExecutableFieldSelection(traceCtx, f)
 				if path.parent == nil { // nil parent indicates it's the root field
-					traceCtx = contextWithRootFieldToExec(traceCtx, f)
+					traceCtx = contextWithExecutableRootFieldSelection(traceCtx, f)
 				}
 				in = append(in, reflect.ValueOf(traceCtx))
 			}
