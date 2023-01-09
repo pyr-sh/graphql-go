@@ -70,11 +70,41 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 
 func selsToSelectedFields(sels []Selection) (fs []*types.SelectedField) {
 	for _, f := range sels {
-		v, ok := f.(*SchemaField)
-		if !ok {
+		// Selection is SchemaField or TypeAssertion or TypenameField
+		switch v := f.(type) {
+		case *SchemaField:
+			fs = append(fs, v.ToSelectedField())
+		case *TypeAssertion:
+			/*
+				TypeAssertion is poorly commented so let's do it here - it represents selections on union fields
+				# Example
+				## Schema
+				type A {}
+				type B {}
+				union AB = A | B
+				type Test {
+					ab: AB
+				}
+				## Query
+				query {
+					test {
+						ab {
+							...on A { # represented by TypeAssertion
+								?
+							}
+							...on B { # represented by TypeAssertion
+								?
+							}
+						}
+					}
+				}
+			*/
+
+			fs = append(fs, selsToSelectedFields(v.Sels)...)
+		default:
+			// Ignore TypenameField as it's the meta "__typename" field and we don't want to expose it
 			continue
 		}
-		fs = append(fs, v.ToSelectedField())
 	}
 	return
 }
