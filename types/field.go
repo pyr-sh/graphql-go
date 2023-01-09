@@ -1,6 +1,10 @@
 package types
 
-import "github.com/graph-gophers/graphql-go/errors"
+import (
+	"strings"
+
+	"github.com/graph-gophers/graphql-go/errors"
+)
 
 // FieldDefinition is a representation of a GraphQL FieldDefinition.
 //
@@ -56,12 +60,20 @@ func (sf SelectedFieldList) Names() (res []string) {
 	return
 }
 
+// Lookup searches the field tree for the field defined by the input path.
+// The path supports aliases so that an aliased field can be pointed to with the following syntax: `alias:fieldName`.
 func (f *SelectedField) Lookup(path ...string) *SelectedField {
 	if len(path) == 0 || f == nil {
 		return f
 	}
+	split := strings.Split(path[0], ":")
+	name := strings.TrimSpace(split[0])
+	var alias string
+	if len(split) == 2 {
+		alias = strings.TrimSpace(split[1])
+	}
 	for _, subf := range f.Fields {
-		if subf.Name == path[0] {
+		if subf.Name == name && (alias == "" || alias == subf.Alias) {
 			return subf.Lookup(path[1:]...)
 		}
 	}
