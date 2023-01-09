@@ -56,13 +56,13 @@ func (sf SelectedFieldList) Names() (res []string) {
 	return
 }
 
-func (f *SelectedField) GoTo(path ...string) *SelectedField {
+func (f *SelectedField) Lookup(path ...string) *SelectedField {
 	if len(path) == 0 || f == nil {
 		return f
 	}
 	for _, subf := range f.Fields {
 		if subf.Name == path[0] {
-			return subf.GoTo(path[1:]...)
+			return subf.Lookup(path[1:]...)
 		}
 	}
 	return nil
