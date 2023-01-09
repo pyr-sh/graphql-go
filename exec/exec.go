@@ -176,11 +176,15 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 }
 
 // SelectedFieldFromContext exposes the fields selected in the GraphQL request using the public-facing types.
-// The purpose of the method is to not export the context key from the package.
+// The function is "aware" of the resolver it's called in, meaning that called in a resolver of a query's child field,
+// it returns an instance of *types.SelectedField representing this particular field. The purpose of the method is to
+// not export the context key from the package.
 func SelectedFieldFromContext(ctx context.Context) *types.SelectedField {
 	return ctx.Value(selectedFieldKey).(*fieldToExec).field.ToSelectedField()
 }
 
+// RootFieldFromContext exposes the root field selected in the GraphQL request using the public-facing types.
+// The purpose of the method is to not export the context key from the package.
 func RootFieldFromContext(ctx context.Context) *types.SelectedField {
 	return ctx.Value(rootFieldKey).(*fieldToExec).field.ToSelectedField()
 }
