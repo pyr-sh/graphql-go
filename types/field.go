@@ -46,16 +46,7 @@ type SelectedField struct {
 	Alias      string
 	Directives DirectiveList
 	Args       map[string]interface{}
-	Fields     SelectedFieldList
-}
-
-type SelectedFieldList []*SelectedField
-
-func (sf SelectedFieldList) Names() (res []string) {
-	for _, f := range sf {
-		res = append(res, f.Name)
-	}
-	return
+	Fields     []*SelectedField
 }
 
 type SelectedFieldIdentifier struct {
