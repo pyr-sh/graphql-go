@@ -75,31 +75,7 @@ func selsToSelectedFields(sels []Selection) (fs []*types.SelectedField) {
 		case *SchemaField:
 			fs = append(fs, v.ToSelectedField())
 		case *TypeAssertion:
-			/*
-				TypeAssertion is poorly commented so let's do it here - it represents selections on union fields
-				# Example
-				## Schema
-				type A {}
-				type B {}
-				union AB = A | B
-				type Test {
-					ab: AB
-				}
-				## Query
-				query {
-					test {
-						ab {
-							...on A { # represented by TypeAssertion
-								?
-							}
-							...on B { # represented by TypeAssertion
-								?
-							}
-						}
-					}
-				}
-			*/
-
+			// TypeAssertion is a selection dependent on the type of a union field
 			fs = append(fs, selsToSelectedFields(v.Sels)...)
 		default:
 			// Ignore TypenameField as it's the meta "__typename" field and we don't want to expose it
