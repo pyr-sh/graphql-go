@@ -7,12 +7,12 @@ import (
 	"github.com/graph-gophers/graphql-go/types"
 )
 
-// SelectedField retrieves the selected field passed via the context during the request execution
-func SelectedField(ctx context.Context) *types.SelectedField {
+// Get retrieves the selected field passed via the context during the request execution
+func Get(ctx context.Context) *types.SelectedField {
 	return exec.SelectedFieldFromContext(ctx)
 }
 
 // SelectedField retrieves the root parent field of the selected field
-func RootField(ctx context.Context) *types.SelectedField {
+func GetRoot(ctx context.Context) *types.SelectedField {
 	return exec.RootFieldFromContext(ctx)
 }

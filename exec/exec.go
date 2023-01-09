@@ -176,7 +176,7 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 }
 
 // SelectedFieldFromContext exposes the fields selected in the GraphQL request using the public-facing types.
-// SelectedField struct
+// The purpose of the method is to not export the context key from the package.
 func SelectedFieldFromContext(ctx context.Context) *types.SelectedField {
 	return ctx.Value(selectedFieldKey).(*fieldToExec).field.ToSelectedField()
 }
