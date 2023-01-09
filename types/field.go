@@ -1,8 +1,6 @@
 package types
 
 import (
-	"strings"
-
 	"github.com/graph-gophers/graphql-go/errors"
 )
 
@@ -60,26 +58,21 @@ func (sf SelectedFieldList) Names() (res []string) {
 	return
 }
 
-// Lookup searches the field tree for the field defined by the input path.
-// The path supports aliases so that an aliased field can be pointed to with the following syntax: `alias:fieldName`.
-func (f *SelectedField) Lookup(path ...string) *SelectedField {
+type SelectedFieldIdentifier struct {
+	Name  string
+	Alias string
+}
+
+// Lookup searches the field tree for the field defined by the input path
+func (f *SelectedField) Lookup(path ...SelectedFieldIdentifier) *SelectedField {
 	if len(path) == 0 || f == nil {
 		return f
 	}
-	if path[0] == "" {
-		panic("path component cannot be empty")
-	}
-	parts := strings.Split(path[0], ":")
-	if len(parts) > 2 {
-		panic("expected `fieldName` or `alias:fieldName` syntax, got: " + path[0])
-	}
-	name := strings.TrimSpace(parts[0])
-	var alias string
-	if len(parts) == 2 {
-		alias = strings.TrimSpace(parts[1])
+	if path[0].Name == "" {
+		panic("path component's name cannot be empty")
 	}
 	for _, subf := range f.Fields {
-		if subf.Name == name && (alias == "" || alias == subf.Alias) {
+		if subf.Name == path[0].Name && (path[0].Alias == "" || path[0].Alias == subf.Alias) {
 			return subf.Lookup(path[1:]...)
 		}
 	}
