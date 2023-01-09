@@ -66,11 +66,17 @@ func (f *SelectedField) Lookup(path ...string) *SelectedField {
 	if len(path) == 0 || f == nil {
 		return f
 	}
-	split := strings.Split(path[0], ":")
-	name := strings.TrimSpace(split[0])
+	if path[0] == "" {
+		panic("path component cannot be empty")
+	}
+	parts := strings.Split(path[0], ":")
+	if len(parts) > 2 {
+		panic("expected `fieldName` or `alias:fieldName` syntax, got: " + path[0])
+	}
+	name := strings.TrimSpace(parts[0])
 	var alias string
-	if len(split) == 2 {
-		alias = strings.TrimSpace(split[1])
+	if len(parts) == 2 {
+		alias = strings.TrimSpace(parts[1])
 	}
 	for _, subf := range f.Fields {
 		if subf.Name == name && (alias == "" || alias == subf.Alias) {
