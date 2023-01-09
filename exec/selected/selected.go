@@ -76,7 +76,14 @@ func selsToSelectedFields(sels []Selection) (fs []*types.SelectedField) {
 			fs = append(fs, v.ToSelectedField())
 		case *TypeAssertion:
 			// TypeAssertion is a selection dependent on the type of a union field
-			fs = append(fs, selsToSelectedFields(v.Sels)...)
+			var assertedTypeName string
+			if v, ok := v.TypeAssertion.TypeExec.(*resolvable.Object); ok {
+				assertedTypeName = v.Name
+			}
+			for _, f := range selsToSelectedFields(v.Sels) {
+				f.AssertedTypeName = assertedTypeName
+				fs = append(fs, f)
+			}
 		default:
 			// Ignore TypenameField as it's the meta "__typename" field and we don't want to expose it
 			continue
