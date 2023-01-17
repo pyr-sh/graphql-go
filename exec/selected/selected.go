@@ -78,8 +78,8 @@ func selsToSelectedFields(sels []Selection) (res []*types.SelectedField) {
 			// TypeAssertion is a selection dependent on the type of a union field
 			var assertedTypeName string
 			// It can only be *resolvable.Object, see execBuilder's makeExec method in resolvable package
-			if v, ok := v.TypeAssertion.TypeExec.(*resolvable.Object); ok {
-				assertedTypeName = v.Name
+			if obj, ok := v.TypeAssertion.TypeExec.(*resolvable.Object); ok {
+				assertedTypeName = obj.Name
 			}
 			for _, subf := range selsToSelectedFields(v.Sels) {
 				subf.AssertedTypeName = assertedTypeName
