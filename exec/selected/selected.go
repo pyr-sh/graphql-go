@@ -68,21 +68,21 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 	}
 }
 
-func selsToSelectedFields(sels []Selection) (fs []*types.SelectedField) {
+func selsToSelectedFields(sels []Selection) (res []*types.SelectedField) {
 	for _, f := range sels {
 		// Selection is SchemaField or TypeAssertion or TypenameField
 		switch v := f.(type) {
 		case *SchemaField:
-			fs = append(fs, v.ToSelectedField())
+			res = append(res, v.ToSelectedField())
 		case *TypeAssertion:
 			// TypeAssertion is a selection dependent on the type of a union field
 			var assertedTypeName string
 			if v, ok := v.TypeAssertion.TypeExec.(*resolvable.Object); ok {
 				assertedTypeName = v.Name
 			}
-			for _, f := range selsToSelectedFields(v.Sels) {
-				f.AssertedTypeName = assertedTypeName
-				fs = append(fs, f)
+			for _, subf := range selsToSelectedFields(v.Sels) {
+				subf.AssertedTypeName = assertedTypeName
+				res = append(res, subf)
 			}
 		default:
 			// Ignore TypenameField as it's the meta "__typename" field and we don't want to expose it
