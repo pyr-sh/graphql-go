@@ -60,11 +60,12 @@ func (f *SelectedField) Lookup(path ...SelectedFieldIdentifier) *SelectedField {
 	if len(path) == 0 || f == nil {
 		return f
 	}
-	if path[0].Name == "" {
+	curr := path[0]
+	if curr.Name == "" {
 		panic("path component's name cannot be empty")
 	}
 	for _, subf := range f.Fields {
-		if subf.Name == path[0].Name && (path[0].Alias == "" || path[0].Alias == subf.Alias) {
+		if subf.Name == curr.Name && curr.Alias == subf.Alias {
 			return subf.Lookup(path[1:]...)
 		}
 	}
