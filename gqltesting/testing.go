@@ -24,6 +24,7 @@ type Test struct {
 	ExpectedResult string
 	ExpectedErrors []*errors.QueryError
 	RawResponse    bool
+	IgnoreResult   bool
 }
 
 // RunTests runs the given GraphQL test cases as subtests.
@@ -48,6 +49,10 @@ func RunTest(t *testing.T, test *Test) {
 	result := test.Schema.Exec(test.Context, test.Query, test.OperationName, test.Variables)
 
 	checkErrors(t, test.ExpectedErrors, result.Errors)
+
+	if test.IgnoreResult {
+		return
+	}
 
 	if test.ExpectedResult == "" {
 		if result.Data != nil {
