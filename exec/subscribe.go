@@ -39,6 +39,8 @@ func (r *Request) Subscribe(ctx context.Context, s *resolvable.Schema, op *types
 
 		var in []reflect.Value
 		if f.field.HasContext {
+			ctx = contextWithExecutableFieldSelection(ctx, f)
+			ctx = contextWithExecutableRootFieldSelection(ctx, f) // subscriptions are always root
 			in = append(in, reflect.ValueOf(ctx))
 		}
 		if f.field.ArgsPacker != nil {
