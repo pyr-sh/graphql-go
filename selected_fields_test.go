@@ -158,7 +158,7 @@ func TestSelectedFieldsNestedAliasesArgsDirectives(t *testing.T) {
 	})
 }
 
-// Type assertion w/ interface
+// Union query result
 
 type selectedFieldsResolver2 struct {
 	T *testing.T
@@ -166,10 +166,14 @@ type selectedFieldsResolver2 struct {
 
 func (r *selectedFieldsResolver2) Test(ctx context.Context) []selectedFieldsTestUnion {
 	f := fields.Selected(ctx)
-
+	if f == nil {
+		failWithError(r.T, "selected field is nil")
+	}
+	if !(f.Name == "test" && f.TypeName == "[Test!]!") {
+		failWithError(r.T, "test field validation failed")
+	}
 	if len(f.Fields) != 4 {
-		r.T.Errorf("expected 4 fields, got %d", len(f.Fields))
-		return nil
+		failWithError(r.T, "expected 4 fields, got %d", len(f.Fields))
 	}
 
 	aID, bID, aValue, bIndex := f.Fields[0], f.Fields[1], f.Fields[2], f.Fields[3]
@@ -189,10 +193,10 @@ func (r *selectedFieldsResolver2) Test(ctx context.Context) []selectedFieldsTest
 	return []selectedFieldsTestUnion{}
 }
 
-type AOrB interface {
+type aOrB interface {
 	ID() string
 }
-type selectedFieldsTestUnion struct{ AOrB }
+type selectedFieldsTestUnion struct{ aOrB }
 
 type selectedFieldsTestAResolver2 struct{}
 
@@ -205,7 +209,7 @@ func (r selectedFieldsTestBResolver2) ID() string   { return "" }
 func (r selectedFieldsTestBResolver2) Index() int32 { return 0 }
 
 func (r selectedFieldsTestUnion) ToA() (*selectedFieldsTestAResolver2, bool) {
-	v, ok := r.AOrB.(selectedFieldsTestAResolver2)
+	v, ok := r.aOrB.(selectedFieldsTestAResolver2)
 	if !ok {
 		return nil, false
 	}
@@ -213,14 +217,14 @@ func (r selectedFieldsTestUnion) ToA() (*selectedFieldsTestAResolver2, bool) {
 }
 
 func (r selectedFieldsTestUnion) ToB() (*selectedFieldsTestBResolver2, bool) {
-	v, ok := r.AOrB.(selectedFieldsTestBResolver2)
+	v, ok := r.aOrB.(selectedFieldsTestBResolver2)
 	if !ok {
 		return nil, false
 	}
 	return &v, true
 }
 
-func TestSelectedFieldsTypeAssertionWithInterface(t *testing.T) {
+func TestSelectedFieldsUnionQueryResult(t *testing.T) {
 	schemaString := `
 	schema {
 		query: Query
@@ -269,11 +273,79 @@ func TestSelectedFieldsTypeAssertionWithInterface(t *testing.T) {
 	})
 }
 
+// Interface query result
+
+type selectedFieldsResolver3 struct {
+	T *testing.T
+}
+
+func (r *selectedFieldsResolver3) Test(ctx context.Context) []identifiable {
+	f := fields.Selected(ctx)
+	if f == nil {
+		failWithError(r.T, "selected field is nil")
+	}
+	if len(f.Fields) != 1 {
+		failWithError(r.T, "expected 1 field, got %d", len(f.Fields))
+	}
+	if !(f.Name == "test" && f.TypeName == "[Identifiable!]!" && f.AssertedTypeName == "") {
+		failWithError(r.T, "test field validation field")
+	}
+	field := f.Fields[0]
+	if !(field.Name == "id" && field.TypeName == "String!") {
+		failWithError(r.T, "id field validation field")
+	}
+
+	return []identifiable{}
+}
+
+type identifiable interface {
+	ID() string
+	ToA() (*selectedFieldsTestAResolver2, bool)
+	ToB() (*selectedFieldsTestBResolver2, bool)
+}
+
+func TestSelectedFieldsInterfaceQueryResult(t *testing.T) {
+	schemaString := `
+	schema {
+		query: Query
+	}
+
+	type Query {
+		test: [Identifiable!]!
+	}
+
+	interface Identifiable {
+		id: String!
+	}
+
+	type A implements Identifiable {
+		id: String!
+		value: Int!
+	}
+
+	type B implements Identifiable {
+		id: String!
+		index: Int!
+	}`
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver3{t}),
+			Query: `
+				{
+					test {
+						id
+					}
+				}
+			`,
+			IgnoreResult: true,
+		},
+	})
+}
+
 // Utils
 
 func failWithError(t *testing.T, msg string, args ...interface{}) {
-	if len(args) != 0 {
-		t.Errorf(msg, args...)
-	}
+	t.Errorf(msg, args...)
 	t.FailNow()
 }
