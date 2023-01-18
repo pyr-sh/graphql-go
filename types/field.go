@@ -44,7 +44,7 @@ func (l FieldsDefinition) Names() []string {
 type SelectedField struct {
 	Name             string
 	TypeName         string
-	Alias            string
+	Alias            string // equal to Name if alias is not provided
 	Directives       DirectiveList
 	Args             map[string]interface{}
 	Fields           []*SelectedField
