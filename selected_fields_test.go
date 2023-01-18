@@ -132,7 +132,7 @@ func (r selectedFieldsTestResolver1) D() selectedFieldsTestDResolver {
 
 type selectedFieldsTestDResolver struct{}
 
-func TestSelectedFieldNestedWithAliases(t *testing.T) {
+func TestSelectedFieldsNestedAliasesArgsDirectives(t *testing.T) {
 	schemaString := `
 	schema {
 		query: Query
