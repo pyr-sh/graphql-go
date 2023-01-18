@@ -173,16 +173,16 @@ func (r *selectedFieldsResolver2) Test(ctx context.Context) []selectedFieldsTest
 	}
 
 	aID, bID, aValue, bIndex := f.Fields[0], f.Fields[1], f.Fields[2], f.Fields[3]
-	if !(aID.Name == "id" && aID.TypeName == "String!") {
+	if !(aID.Name == "id" && aID.TypeName == "String!" && aID.AssertedTypeName == "A") {
 		r.T.FailNow()
 	}
-	if !(bID.Name == "id" && bID.TypeName == "String!") {
+	if !(bID.Name == "id" && bID.TypeName == "String!" && bID.AssertedTypeName == "B") {
 		r.T.FailNow()
 	}
-	if !(aValue.Name == "value" && aValue.TypeName == "Int!") {
+	if !(aValue.Name == "value" && aValue.TypeName == "Int!" && aValue.AssertedTypeName == "A") {
 		r.T.FailNow()
 	}
-	if !(bIndex.Name == "index" && bIndex.TypeName == "Int!") {
+	if !(bIndex.Name == "index" && bIndex.TypeName == "Int!" && bIndex.AssertedTypeName == "B") {
 		r.T.FailNow()
 	}
 
