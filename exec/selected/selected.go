@@ -47,8 +47,13 @@ type Selection interface {
 
 type SchemaField struct {
 	resolvable.Field
-	Alias       string
-	Args        map[string]interface{}
+	Alias string
+	Args  map[string]interface{}
+
+	// For e.g. FIELD directives provided in the query. `Directives` field in resolvable.Field => types.FieldDefinition
+	// contains directives from schema e.g. FIELD_DEFINITION.
+	Directives types.DirectiveList
+
 	PackedArgs  reflect.Value
 	Sels        []Selection
 	Async       bool
@@ -65,7 +70,7 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 		Alias:      sf.Alias,
 		Fields:     selsToSelectedFields(sf.Sels),
 		Args:       sf.Args,
-		Directives: sf.Directives,
+		Directives: append(sf.Directives, sf.Field.Directives...),
 	}
 }
 
@@ -195,6 +200,7 @@ func applySelectionSet(r *Request, s *resolvable.Schema, e *resolvable.Object, s
 					Field:      *fe,
 					Alias:      field.Alias.Name,
 					Args:       args,
+					Directives: field.Directives,
 					PackedArgs: packedArgs,
 					Sels:       fieldSels,
 					Async:      fe.HasContext || fe.ArgsPacker != nil || fe.HasError || HasAsyncSel(fieldSels),
