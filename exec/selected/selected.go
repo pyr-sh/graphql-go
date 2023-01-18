@@ -61,6 +61,7 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 	}
 	return &types.SelectedField{
 		Name:       sf.Name,
+		TypeName:   sf.Field.TypeName,
 		Alias:      sf.Alias,
 		Fields:     selsToSelectedFields(sf.Sels),
 		Args:       sf.Args,
