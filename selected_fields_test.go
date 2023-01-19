@@ -10,7 +10,51 @@ import (
 	"github.com/graph-gophers/graphql-go/types"
 )
 
-// Nested fields with aliases, arguments and directives
+// Test 1: Nested fields with aliases, arguments and directives
+
+func TestSelectedFieldsNestedAliasesArgsDirectives(t *testing.T) {
+	schemaString := `
+	schema {
+		query: Query
+	}
+
+	type Query {
+		test: Test!
+	}
+
+	type D {
+		value: String!
+	}
+	
+	type Test {
+		a(value: String): String!
+		b: String @testFieldDefinitionDirective(description: "Test description")
+		c: Int! @testFieldDefinitionDirective
+		d: D!
+	}
+	
+	directive @testFieldDefinitionDirective(description: String = "Default description") on FIELD_DEFINITION
+	directive @testFieldDirective on FIELD`
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver1{t}),
+			Query: `
+				{
+					test {
+						a(value: "aValue") @testFieldDirective
+						b
+						c
+						aliasedD: d {
+							value 
+						}
+					}
+				}
+			`,
+			IgnoreResult: true,
+		},
+	})
+}
 
 type selectedFieldsResolver1 struct {
 	T *testing.T
@@ -115,41 +159,48 @@ func (r selectedFieldsTestResolver1) D() selectedFieldsTestDResolver {
 
 type selectedFieldsTestDResolver struct{}
 
-func TestSelectedFieldsNestedAliasesArgsDirectives(t *testing.T) {
+// Test 2: Union query result
+
+func TestSelectedFieldsUnionQueryResult(t *testing.T) {
 	schemaString := `
 	schema {
 		query: Query
 	}
 
 	type Query {
-		test: Test!
+		test: [Test!]!
 	}
 
-	type D {
-		value: String!
+	union Test = A | B
+
+	type A implements Identifiable {
+		id: String!
+		value: Int!
 	}
-	
-	type Test {
-		a(value: String): String!
-		b: String @testFieldDefinitionDirective(description: "Test description")
-		c: Int! @testFieldDefinitionDirective
-		d: D!
+
+	type B implements Identifiable {
+		id: String!
+		index: Int!
 	}
-	
-	directive @testFieldDefinitionDirective(description: String = "Default description") on FIELD_DEFINITION
-	directive @testFieldDirective on FIELD`
+
+	interface Identifiable {
+		id: String!
+	}`
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver1{t}),
+			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver2{t}),
 			Query: `
 				{
 					test {
-						a(value: "aValue") @testFieldDirective
-						b
-						c
-						aliasedD: d {
-							value 
+						... on Identifiable {
+							id
+						}
+						... on A {
+							value
+						}
+						... on B {
+							index
 						}
 					}
 				}
@@ -158,8 +209,6 @@ func TestSelectedFieldsNestedAliasesArgsDirectives(t *testing.T) {
 		},
 	})
 }
-
-// Union query result
 
 type selectedFieldsResolver2 struct {
 	T *testing.T
@@ -225,85 +274,7 @@ func (r selectedFieldsTestUnion) ToB() (*selectedFieldsTestBResolver2, bool) {
 	return &v, true
 }
 
-func TestSelectedFieldsUnionQueryResult(t *testing.T) {
-	schemaString := `
-	schema {
-		query: Query
-	}
-
-	type Query {
-		test: [Test!]!
-	}
-
-	union Test = A | B
-
-	type A implements Identifiable {
-		id: String!
-		value: Int!
-	}
-
-	type B implements Identifiable {
-		id: String!
-		index: Int!
-	}
-
-	interface Identifiable {
-		id: String!
-	}`
-
-	gqltesting.RunTests(t, []*gqltesting.Test{
-		{
-			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver2{t}),
-			Query: `
-				{
-					test {
-						... on Identifiable {
-							id
-						}
-						... on A {
-							value
-						}
-						... on B {
-							index
-						}
-					}
-				}
-			`,
-			IgnoreResult: true,
-		},
-	})
-}
-
-// Interface query result
-
-type selectedFieldsResolver3 struct {
-	T *testing.T
-}
-
-func (r *selectedFieldsResolver3) Test(ctx context.Context) []identifiable {
-	f := fields.Selected(ctx)
-	if f == nil {
-		failWithError(r.T, "selected field is nil")
-	}
-	if len(f.Fields) != 1 {
-		failWithError(r.T, "expected 1 field, got %d", len(f.Fields))
-	}
-	if !(f.Name == "test" && f.TypeName == "[Identifiable!]!" && f.AssertedTypeName == "") {
-		failWithError(r.T, "test field assertion field")
-	}
-	field := f.Fields[0]
-	if !(field.Name == "id" && field.TypeName == "String!") {
-		failWithError(r.T, "id field assertion field")
-	}
-
-	return []identifiable{}
-}
-
-type identifiable interface {
-	ID() string
-	ToA() (*selectedFieldsTestAResolver2, bool)
-	ToB() (*selectedFieldsTestBResolver2, bool)
-}
+// Test 3: Interface query result
 
 func TestSelectedFieldsInterfaceQueryResult(t *testing.T) {
 	schemaString := `
@@ -344,52 +315,36 @@ func TestSelectedFieldsInterfaceQueryResult(t *testing.T) {
 	})
 }
 
-// Nested fields lookup
-
-type selectedFieldsResolver4 struct {
+type selectedFieldsResolver3 struct {
 	T *testing.T
 }
 
-func (r *selectedFieldsResolver4) Test(ctx context.Context) selectedFieldsResolver4Test {
-	testField := fields.Selected(ctx)
-	if !(testField != nil && testField.Name == "test" && testField.TypeName == "Test!" && testField.Alias == "test") {
-		failWithError(r.T, "test field assertion failed")
+func (r *selectedFieldsResolver3) Test(ctx context.Context) []identifiable {
+	f := fields.Selected(ctx)
+	if f == nil {
+		failWithError(r.T, "selected field is nil")
 	}
-	aField := testField.Lookup(types.SelectedFieldIdentifier{Name: "a", Alias: "a"})
-	if !(aField != nil && aField.Name == "a" && aField.TypeName == "A!" && aField.Alias == "a") {
-		failWithError(r.T, "a field assertion failed")
+	if len(f.Fields) != 1 {
+		failWithError(r.T, "expected 1 field, got %d", len(f.Fields))
 	}
-	bField := aField.Lookup(types.SelectedFieldIdentifier{Name: "b", Alias: "b"})
-	if !(bField != nil && bField.Name == "b" && bField.TypeName == "B!" && bField.Alias == "b") {
-		failWithError(r.T, "b field assertion failed")
+	if !(f.Name == "test" && f.TypeName == "[Identifiable!]!" && f.AssertedTypeName == "") {
+		failWithError(r.T, "test field assertion field")
 	}
-	cField := bField.Lookup(types.SelectedFieldIdentifier{Name: "c", Alias: "aliasedC"})
-	if !(cField != nil && cField.Name == "c" && cField.TypeName == "C!" && cField.Alias == "aliasedC") {
-		failWithError(r.T, "c field assertion failed")
+	field := f.Fields[0]
+	if !(field.Name == "id" && field.TypeName == "String!") {
+		failWithError(r.T, "id field assertion field")
 	}
-	valueField := cField.Lookup(types.SelectedFieldIdentifier{Name: "value", Alias: "value"})
-	if !(valueField != nil && valueField.Name == "value" && valueField.TypeName == "String!" &&
-		valueField.Alias == "value" && len(valueField.Fields) == 0) {
-		failWithError(r.T, "value field assertion failed")
-	}
-	return selectedFieldsResolver4Test{}
+
+	return []identifiable{}
 }
 
-type selectedFieldsResolver4Test struct{}
+type identifiable interface {
+	ID() string
+	ToA() (*selectedFieldsTestAResolver2, bool)
+	ToB() (*selectedFieldsTestBResolver2, bool)
+}
 
-func (r selectedFieldsResolver4Test) A() selectedFieldsResolver4A { return selectedFieldsResolver4A{} }
-
-type selectedFieldsResolver4A struct{}
-
-func (r selectedFieldsResolver4A) B() selectedFieldsResolver4B { return selectedFieldsResolver4B{} }
-
-type selectedFieldsResolver4B struct{}
-
-func (r selectedFieldsResolver4B) C() selectedFieldsResolver4C { return selectedFieldsResolver4C{} }
-
-type selectedFieldsResolver4C struct{}
-
-func (r selectedFieldsResolver4C) Value() string { return "value" }
+// Test 4: Nested fields lookup
 
 func TestSelectedFieldsNestedFieldsLookup(t *testing.T) {
 	schemaString := `
@@ -437,6 +392,51 @@ func TestSelectedFieldsNestedFieldsLookup(t *testing.T) {
 		},
 	})
 }
+
+type selectedFieldsResolver4 struct {
+	T *testing.T
+}
+
+func (r *selectedFieldsResolver4) Test(ctx context.Context) selectedFieldsResolver4Test {
+	testField := fields.Selected(ctx)
+	if !(testField != nil && testField.Name == "test" && testField.TypeName == "Test!" && testField.Alias == "test") {
+		failWithError(r.T, "test field assertion failed")
+	}
+	aField := testField.Lookup(types.SelectedFieldIdentifier{Name: "a", Alias: "a"})
+	if !(aField != nil && aField.Name == "a" && aField.TypeName == "A!" && aField.Alias == "a") {
+		failWithError(r.T, "a field assertion failed")
+	}
+	bField := aField.Lookup(types.SelectedFieldIdentifier{Name: "b", Alias: "b"})
+	if !(bField != nil && bField.Name == "b" && bField.TypeName == "B!" && bField.Alias == "b") {
+		failWithError(r.T, "b field assertion failed")
+	}
+	cField := bField.Lookup(types.SelectedFieldIdentifier{Name: "c", Alias: "aliasedC"})
+	if !(cField != nil && cField.Name == "c" && cField.TypeName == "C!" && cField.Alias == "aliasedC") {
+		failWithError(r.T, "c field assertion failed")
+	}
+	valueField := cField.Lookup(types.SelectedFieldIdentifier{Name: "value", Alias: "value"})
+	if !(valueField != nil && valueField.Name == "value" && valueField.TypeName == "String!" &&
+		valueField.Alias == "value" && len(valueField.Fields) == 0) {
+		failWithError(r.T, "value field assertion failed")
+	}
+	return selectedFieldsResolver4Test{}
+}
+
+type selectedFieldsResolver4Test struct{}
+
+func (r selectedFieldsResolver4Test) A() selectedFieldsResolver4A { return selectedFieldsResolver4A{} }
+
+type selectedFieldsResolver4A struct{}
+
+func (r selectedFieldsResolver4A) B() selectedFieldsResolver4B { return selectedFieldsResolver4B{} }
+
+type selectedFieldsResolver4B struct{}
+
+func (r selectedFieldsResolver4B) C() selectedFieldsResolver4C { return selectedFieldsResolver4C{} }
+
+type selectedFieldsResolver4C struct{}
+
+func (r selectedFieldsResolver4C) Value() string { return "value" }
 
 // Utils
 
