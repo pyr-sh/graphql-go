@@ -38,7 +38,7 @@ func TestSelectedFieldsNestedAliasesArgsDirectives(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver1{t}),
+			Schema: graphql.MustParseSchema(schemaString, &nestedAliasesArgsDirectivesQueryResolver{t}),
 			Query: `
 				{
 					test {
@@ -56,11 +56,11 @@ func TestSelectedFieldsNestedAliasesArgsDirectives(t *testing.T) {
 	})
 }
 
-type selectedFieldsResolver1 struct {
+type nestedAliasesArgsDirectivesQueryResolver struct {
 	T *testing.T
 }
 
-func (r *selectedFieldsResolver1) Test(ctx context.Context) selectedFieldsTestResolver1 {
+func (r *nestedAliasesArgsDirectivesQueryResolver) Test(ctx context.Context) nestedAliasesArgsDirectivesTestResolver {
 	sel := fields.Selected(ctx)
 	if sel == nil {
 		failWithError(r.T, "selected field is nil")
@@ -139,25 +139,21 @@ func (r *selectedFieldsResolver1) Test(ctx context.Context) selectedFieldsTestRe
 		failWithError(r.T, "c field assertion failed")
 	}
 
-	return selectedFieldsTestResolver1{}
+	return nestedAliasesArgsDirectivesTestResolver{}
 }
 
-type selectedFieldsTestResolver1 struct{}
+type nestedAliasesArgsDirectivesTestResolver struct{}
 
-func (r selectedFieldsTestDResolver) Value() string { return "value" }
-
-type aArgs struct {
-	Value *string
+func (r nestedAliasesArgsDirectivesTestResolver) A(struct{ Value *string }) string { return "a" }
+func (r nestedAliasesArgsDirectivesTestResolver) B() *string                       { return nil }
+func (r nestedAliasesArgsDirectivesTestResolver) C() int32                         { return 1 }
+func (r nestedAliasesArgsDirectivesTestResolver) D() nestedAliasesArgsDirectivesDResolver {
+	return nestedAliasesArgsDirectivesDResolver{}
 }
 
-func (r selectedFieldsTestResolver1) A(aArgs) string { return "a" }
-func (r selectedFieldsTestResolver1) B() *string     { return nil }
-func (r selectedFieldsTestResolver1) C() int32       { return 1 }
-func (r selectedFieldsTestResolver1) D() selectedFieldsTestDResolver {
-	return selectedFieldsTestDResolver{}
-}
+type nestedAliasesArgsDirectivesDResolver struct{}
 
-type selectedFieldsTestDResolver struct{}
+func (r nestedAliasesArgsDirectivesDResolver) Value() string { return "value" }
 
 // Test 2: Union query result
 
@@ -189,7 +185,7 @@ func TestSelectedFieldsUnionQueryResult(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver2{t}),
+			Schema: graphql.MustParseSchema(schemaString, &unionQueryResultQueryResolver{t}),
 			Query: `
 				{
 					test {
@@ -210,11 +206,11 @@ func TestSelectedFieldsUnionQueryResult(t *testing.T) {
 	})
 }
 
-type selectedFieldsResolver2 struct {
+type unionQueryResultQueryResolver struct {
 	T *testing.T
 }
 
-func (r *selectedFieldsResolver2) Test(ctx context.Context) []selectedFieldsTestUnion {
+func (r *unionQueryResultQueryResolver) Test(ctx context.Context) []unionQueryResultTestUnion {
 	f := fields.Selected(ctx)
 	if f == nil {
 		failWithError(r.T, "selected field is nil")
@@ -240,34 +236,34 @@ func (r *selectedFieldsResolver2) Test(ctx context.Context) []selectedFieldsTest
 		r.T.FailNow()
 	}
 
-	return []selectedFieldsTestUnion{}
+	return []unionQueryResultTestUnion{}
 }
 
 type aOrB interface {
 	ID() string
 }
-type selectedFieldsTestUnion struct{ aOrB }
+type unionQueryResultTestUnion struct{ aOrB }
 
-type selectedFieldsTestAResolver2 struct{}
+type unionQueryResultAResolver struct{}
 
-func (r selectedFieldsTestAResolver2) ID() string   { return "" }
-func (r selectedFieldsTestAResolver2) Value() int32 { return 0 }
+func (r unionQueryResultAResolver) ID() string   { return "" }
+func (r unionQueryResultAResolver) Value() int32 { return 0 }
 
-type selectedFieldsTestBResolver2 struct{}
+type unionQueryResultBResolver struct{}
 
-func (r selectedFieldsTestBResolver2) ID() string   { return "" }
-func (r selectedFieldsTestBResolver2) Index() int32 { return 0 }
+func (r unionQueryResultBResolver) ID() string   { return "" }
+func (r unionQueryResultBResolver) Index() int32 { return 0 }
 
-func (r selectedFieldsTestUnion) ToA() (*selectedFieldsTestAResolver2, bool) {
-	v, ok := r.aOrB.(selectedFieldsTestAResolver2)
+func (r unionQueryResultTestUnion) ToA() (*unionQueryResultAResolver, bool) {
+	v, ok := r.aOrB.(unionQueryResultAResolver)
 	if !ok {
 		return nil, false
 	}
 	return &v, true
 }
 
-func (r selectedFieldsTestUnion) ToB() (*selectedFieldsTestBResolver2, bool) {
-	v, ok := r.aOrB.(selectedFieldsTestBResolver2)
+func (r unionQueryResultTestUnion) ToB() (*unionQueryResultBResolver, bool) {
+	v, ok := r.aOrB.(unionQueryResultBResolver)
 	if !ok {
 		return nil, false
 	}
@@ -302,7 +298,7 @@ func TestSelectedFieldsInterfaceQueryResult(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver3{t}),
+			Schema: graphql.MustParseSchema(schemaString, &interfaceQueryResultQueryResolver{t}),
 			Query: `
 				{
 					test {
@@ -315,11 +311,11 @@ func TestSelectedFieldsInterfaceQueryResult(t *testing.T) {
 	})
 }
 
-type selectedFieldsResolver3 struct {
+type interfaceQueryResultQueryResolver struct {
 	T *testing.T
 }
 
-func (r *selectedFieldsResolver3) Test(ctx context.Context) []identifiable {
+func (r *interfaceQueryResultQueryResolver) Test(ctx context.Context) []interfaceQueryResultIdentifiable {
 	f := fields.Selected(ctx)
 	if f == nil {
 		failWithError(r.T, "selected field is nil")
@@ -335,13 +331,13 @@ func (r *selectedFieldsResolver3) Test(ctx context.Context) []identifiable {
 		failWithError(r.T, "id field assertion field")
 	}
 
-	return []identifiable{}
+	return []interfaceQueryResultIdentifiable{}
 }
 
-type identifiable interface {
+type interfaceQueryResultIdentifiable interface {
 	ID() string
-	ToA() (*selectedFieldsTestAResolver2, bool)
-	ToB() (*selectedFieldsTestBResolver2, bool)
+	ToA() (*unionQueryResultAResolver, bool)
+	ToB() (*unionQueryResultBResolver, bool)
 }
 
 // Test 4: Nested fields lookup
@@ -374,7 +370,7 @@ func TestSelectedFieldsNestedFieldsLookup(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: graphql.MustParseSchema(schemaString, &selectedFieldsResolver4{t}),
+			Schema: graphql.MustParseSchema(schemaString, &nestedFieldsLookupQueryResolver{t}),
 			Query: `
 				{
 					test {
@@ -393,11 +389,11 @@ func TestSelectedFieldsNestedFieldsLookup(t *testing.T) {
 	})
 }
 
-type selectedFieldsResolver4 struct {
+type nestedFieldsLookupQueryResolver struct {
 	T *testing.T
 }
 
-func (r *selectedFieldsResolver4) Test(ctx context.Context) selectedFieldsResolver4Test {
+func (r *nestedFieldsLookupQueryResolver) Test(ctx context.Context) nestedFieldsLookupTestResolver {
 	testField := fields.Selected(ctx)
 	if !(testField != nil && testField.Name == "test" && testField.TypeName == "Test!" && testField.Alias == "test") {
 		failWithError(r.T, "test field assertion failed")
@@ -419,24 +415,30 @@ func (r *selectedFieldsResolver4) Test(ctx context.Context) selectedFieldsResolv
 		valueField.Alias == "value" && len(valueField.Fields) == 0) {
 		failWithError(r.T, "value field assertion failed")
 	}
-	return selectedFieldsResolver4Test{}
+	return nestedFieldsLookupTestResolver{}
 }
 
-type selectedFieldsResolver4Test struct{}
+type nestedFieldsLookupTestResolver struct{}
 
-func (r selectedFieldsResolver4Test) A() selectedFieldsResolver4A { return selectedFieldsResolver4A{} }
+func (r nestedFieldsLookupTestResolver) A() nestedFieldsLookupAResolver {
+	return nestedFieldsLookupAResolver{}
+}
 
-type selectedFieldsResolver4A struct{}
+type nestedFieldsLookupAResolver struct{}
 
-func (r selectedFieldsResolver4A) B() selectedFieldsResolver4B { return selectedFieldsResolver4B{} }
+func (r nestedFieldsLookupAResolver) B() nestedFieldsLookupBResolver {
+	return nestedFieldsLookupBResolver{}
+}
 
-type selectedFieldsResolver4B struct{}
+type nestedFieldsLookupBResolver struct{}
 
-func (r selectedFieldsResolver4B) C() selectedFieldsResolver4C { return selectedFieldsResolver4C{} }
+func (r nestedFieldsLookupBResolver) C() nestedFieldsLookupCResolver {
+	return nestedFieldsLookupCResolver{}
+}
 
-type selectedFieldsResolver4C struct{}
+type nestedFieldsLookupCResolver struct{}
 
-func (r selectedFieldsResolver4C) Value() string { return "value" }
+func (r nestedFieldsLookupCResolver) Value() string { return "value" }
 
 // Utils
 
