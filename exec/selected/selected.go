@@ -47,12 +47,55 @@ type Selection interface {
 
 type SchemaField struct {
 	resolvable.Field
-	Alias       string
-	Args        map[string]interface{}
+	Alias string
+	Args  map[string]interface{}
+
+	// This only contains directives provided in the query. Schema directives are appended in ToSelectedField
+	Directives types.DirectiveList
+
 	PackedArgs  reflect.Value
 	Sels        []Selection
 	Async       bool
 	FixedResult reflect.Value
+}
+
+func (sf *SchemaField) ToSelectedField() *types.SelectedField {
+	if sf == nil {
+		return nil
+	}
+	return &types.SelectedField{
+		Name:       sf.Name,
+		TypeName:   sf.Field.Type.String(),
+		Alias:      sf.Alias,
+		Fields:     selsToSelectedFields(sf.Sels),
+		Args:       sf.Args,
+		Directives: append(sf.Directives, sf.Field.Directives...),
+	}
+}
+
+func selsToSelectedFields(sels []Selection) (res []*types.SelectedField) {
+	for _, f := range sels {
+		// Selection is SchemaField or TypeAssertion or TypenameField
+		switch v := f.(type) {
+		case *SchemaField:
+			res = append(res, v.ToSelectedField())
+		case *TypeAssertion:
+			// TypeAssertion is a selection dependent on the type of a union field
+			var assertedTypeName string
+			// It can only be *resolvable.Object, see execBuilder's makeExec method in the resolvable package
+			if obj, ok := v.TypeAssertion.TypeExec.(*resolvable.Object); ok {
+				assertedTypeName = obj.Name
+			}
+			for _, subf := range selsToSelectedFields(v.Sels) {
+				subf.AssertedTypeName = assertedTypeName
+				res = append(res, subf)
+			}
+		default:
+			// Ignore TypenameField as it's the meta "__typename" field and we don't want to expose it
+			continue
+		}
+	}
+	return
 }
 
 type TypeAssertion struct {
@@ -156,6 +199,7 @@ func applySelectionSet(r *Request, s *resolvable.Schema, e *resolvable.Object, s
 					Field:      *fe,
 					Alias:      field.Alias.Name,
 					Args:       args,
+					Directives: field.Directives,
 					PackedArgs: packedArgs,
 					Sels:       fieldSels,
 					Async:      fe.HasContext || fe.ArgsPacker != nil || fe.HasError || HasAsyncSel(fieldSels),

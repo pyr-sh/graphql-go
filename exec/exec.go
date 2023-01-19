@@ -18,6 +18,13 @@ import (
 	"github.com/graph-gophers/graphql-go/types"
 )
 
+type ctxKey string
+
+const (
+	selectedFieldKey ctxKey = "selectedField"
+	rootFieldKey     ctxKey = "rootField"
+)
+
 type Request struct {
 	selected.Request
 	Limiter                  chan struct{}
@@ -168,6 +175,28 @@ func typeOf(tf *selected.TypenameField, resolver reflect.Value) string {
 	return ""
 }
 
+// SelectedFieldFromContext exposes the fields selected in the GraphQL request using the public-facing types.
+// The function is "aware" of the resolver it's called in, meaning that called in a resolver of a query's child field,
+// it returns an instance of *types.SelectedField representing this particular field. The purpose of the method is to
+// not export the context key from the package.
+func SelectedFieldFromContext(ctx context.Context) *types.SelectedField {
+	return ctx.Value(selectedFieldKey).(*fieldToExec).field.ToSelectedField()
+}
+
+// RootFieldFromContext exposes the root field selected in the GraphQL request using the public-facing types.
+// The purpose of the method is to not export the context key from the package.
+func RootFieldFromContext(ctx context.Context) *types.SelectedField {
+	return ctx.Value(rootFieldKey).(*fieldToExec).field.ToSelectedField()
+}
+
+func contextWithExecutableFieldSelection(parentContext context.Context, f *fieldToExec) context.Context {
+	return context.WithValue(parentContext, selectedFieldKey, f)
+}
+
+func contextWithExecutableRootFieldSelection(parentContext context.Context, f *fieldToExec) context.Context {
+	return context.WithValue(parentContext, rootFieldKey, f)
+}
+
 func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f *fieldToExec, path *pathSegment, applyLimiter bool) {
 	if applyLimiter {
 		r.Limiter <- struct{}{}
@@ -203,6 +232,10 @@ func execFieldSelection(ctx context.Context, r *Request, s *resolvable.Schema, f
 		if f.field.UseMethodResolver() {
 			var in []reflect.Value
 			if f.field.HasContext {
+				traceCtx = contextWithExecutableFieldSelection(traceCtx, f)
+				if path.parent == nil { // nil parent indicates it's the root field
+					traceCtx = contextWithExecutableRootFieldSelection(traceCtx, f)
+				}
 				in = append(in, reflect.ValueOf(traceCtx))
 			}
 			if f.field.ArgsPacker != nil {

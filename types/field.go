@@ -1,6 +1,8 @@
 package types
 
-import "github.com/graph-gophers/graphql-go/errors"
+import (
+	"github.com/graph-gophers/graphql-go/errors"
+)
 
 // FieldDefinition is a representation of a GraphQL FieldDefinition.
 //
@@ -36,4 +38,37 @@ func (l FieldsDefinition) Names() []string {
 		names[i] = f.Name
 	}
 	return names
+}
+
+// SelectedField is the public representation of a field selection in a GraphQL query
+type SelectedField struct {
+	Name             string
+	TypeName         string
+	Alias            string // equal to Name if alias is not provided
+	Directives       DirectiveList
+	Args             map[string]interface{}
+	Fields           []*SelectedField
+	AssertedTypeName string // non-empty for field selections on union fields
+}
+
+type SelectedFieldIdentifier struct {
+	Name  string
+	Alias string
+}
+
+// Lookup searches the field tree for the field defined by the input path
+func (f *SelectedField) Lookup(path ...SelectedFieldIdentifier) *SelectedField {
+	if len(path) == 0 || f == nil {
+		return f
+	}
+	curr := path[0]
+	if curr.Name == "" {
+		panic("path component's name cannot be empty")
+	}
+	for _, subf := range f.Fields {
+		if subf.Name == curr.Name && curr.Alias == subf.Alias {
+			return subf.Lookup(path[1:]...)
+		}
+	}
+	return nil
 }
