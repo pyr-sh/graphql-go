@@ -40,7 +40,7 @@ func (l FieldsDefinition) Names() []string {
 	return names
 }
 
-// SelectedField is the public representation of a field selection during a graphql query
+// SelectedField is the public representation of a field selection in a GraphQL query
 type SelectedField struct {
 	Name             string
 	TypeName         string

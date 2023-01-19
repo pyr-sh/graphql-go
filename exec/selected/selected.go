@@ -50,8 +50,7 @@ type SchemaField struct {
 	Alias string
 	Args  map[string]interface{}
 
-	// For e.g. FIELD directives provided in the query. `Directives` field in resolvable.Field => types.FieldDefinition
-	// contains directives from schema e.g. FIELD_DEFINITION.
+	// This only contains directives provided in the query. Schema directives are appended in ToSelectedField
 	Directives types.DirectiveList
 
 	PackedArgs  reflect.Value
@@ -83,7 +82,7 @@ func selsToSelectedFields(sels []Selection) (res []*types.SelectedField) {
 		case *TypeAssertion:
 			// TypeAssertion is a selection dependent on the type of a union field
 			var assertedTypeName string
-			// It can only be *resolvable.Object, see execBuilder's makeExec method in resolvable package
+			// It can only be *resolvable.Object, see execBuilder's makeExec method in the resolvable package
 			if obj, ok := v.TypeAssertion.TypeExec.(*resolvable.Object); ok {
 				assertedTypeName = obj.Name
 			}
