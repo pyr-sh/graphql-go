@@ -46,7 +46,8 @@ type SelectedField struct {
 	TypeName         string
 	Alias            string // equal to Name if alias is not provided
 	Directives       DirectiveList
-	Args             map[string]interface{}
+	Args             interface{}
+	ArgsMap          map[string]interface{}
 	Fields           []*SelectedField
 	AssertedTypeName string // non-empty for field selections on union fields
 }

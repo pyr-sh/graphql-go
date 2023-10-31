@@ -63,14 +63,18 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 	if sf == nil {
 		return nil
 	}
-	return &types.SelectedField{
+	res := &types.SelectedField{
 		Name:       sf.Name,
 		TypeName:   sf.Field.Type.String(),
 		Alias:      sf.Alias,
 		Fields:     selsToSelectedFields(sf.Sels),
-		Args:       sf.Args,
+		ArgsMap:    sf.Args,
 		Directives: append(sf.Directives, sf.Field.Directives...),
 	}
+	if !sf.PackedArgs.IsZero() {
+		res.Args = sf.PackedArgs.Interface()
+	}
+	return res
 }
 
 func selsToSelectedFields(sels []Selection) (res []*types.SelectedField) {
