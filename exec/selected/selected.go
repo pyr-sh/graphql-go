@@ -71,7 +71,7 @@ func (sf *SchemaField) ToSelectedField() *types.SelectedField {
 		ArgsMap:    sf.Args,
 		Directives: append(sf.Directives, sf.Field.Directives...),
 	}
-	if !sf.PackedArgs.IsValid() {
+	if sf.PackedArgs.IsValid() {
 		res.Args = sf.PackedArgs.Interface()
 	}
 	return res
