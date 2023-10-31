@@ -83,7 +83,7 @@ func (r *nestedAliasesArgsDirectivesQueryResolver) Test(ctx context.Context) nes
 	if aDir == nil {
 		failWithError(r.T, "testFieldDirective doesn't exist on a")
 	}
-	aArgValue, ok := a.Args["value"]
+	aArgValue, ok := a.ArgsMap["value"]
 	if !ok {
 		failWithError(r.T, "value argument on a doesn't exist")
 	}
