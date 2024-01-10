@@ -67,7 +67,8 @@ func (f *SelectedField) Lookup(path ...SelectedFieldIdentifier) *SelectedField {
 		panic("path component's name cannot be empty")
 	}
 	for _, subf := range f.Fields {
-		if subf.Name == curr.Name && curr.Alias == subf.Alias {
+		// an empty Alias in lookup param allows retrieval of first field with requested Name (regardless of requested Alias)
+		if subf.Name == curr.Name && (curr.Alias == "" || curr.Alias == subf.Alias) {
 			return subf.Lookup(path[1:]...)
 		}
 	}
